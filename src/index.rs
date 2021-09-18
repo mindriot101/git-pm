@@ -1,35 +1,35 @@
 use chrono::{DateTime, Utc};
 use eyre::{Result, WrapErr};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Meta {
     pub name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Status {
     Todo,
     Doing,
     Done,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Change {
     pub from: Status,
     pub to: Status,
     pub on: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
     pub id: u64,
     pub status: Status,
     pub changes: Vec<Change>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Index {
     pub meta: Meta,
     pub tasks: Vec<Task>,
@@ -81,4 +81,36 @@ fn ensure_parent_dir(p: &Path) -> Result<()> {
     std::fs::create_dir_all(parent_dir)
         .wrap_err_with(|| format!("creating directory {:?}", parent_dir))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_index() {
+        let text = r#"
+meta:
+  name: My first project
+tasks:
+- id: 1
+  status: Doing
+  changes:
+  - from: Todo
+    to: Doing
+    on: 2021-01-01T00:00:00+00:00
+- id: 2
+  status: Done
+  changes:
+  - from: Todo
+    to: Doing
+    on: 2021-01-01T00:00:00+00:00
+  - from: Doing
+    to: Done
+    on: 2021-02-01T00:00:00+00:00
+"#;
+
+        let parsed: Index = serde_yaml::from_str(text).unwrap();
+        assert_eq!(parsed.meta.name, "My first project");
+    }
 }
