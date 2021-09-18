@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -8,12 +9,23 @@ pub struct Meta {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Status {
     None,
     Todo,
     Doing,
     Done,
+}
+
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        match self {
+            Status::None => write!(f, "None"),
+            Status::Todo => write!(f, "Todo"),
+            Status::Doing => write!(f, "Doing"),
+            Status::Done => write!(f, "Done"),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,6 +40,23 @@ pub struct Task {
     pub id: u64,
     pub status: Status,
     pub changes: Vec<Change>,
+}
+
+impl Task {
+    pub fn detail(&self) -> Result<TaskDetail> {
+        let contents =
+            std::fs::read_to_string(self.target_path().wrap_err("computing target path")?)
+                .wrap_err("reading task detail")?;
+        let detail: TaskDetail = serde_yaml::from_str(&contents).wrap_err("parsing task detail")?;
+        Ok(detail)
+    }
+
+    fn target_path(&self) -> Result<PathBuf> {
+        let pm_dir = find_project_root()
+            .map(|r| r.join("pm"))
+            .wrap_err("computing pm dir")?;
+        Ok(pm_dir.join("tasks").join(format!("{:03}.yml", self.id)))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -7,10 +7,4 @@ tasks:
     changes:
       - from: None
         to: Todo
-        "on": "2021-09-18T23:42:26.094280085Z"
-  - id: 2
-    status: Todo
-    changes:
-      - from: None
-        to: Todo
-        "on": "2021-09-18T23:42:33.144468318Z"
+        "on": "2021-09-18T23:57:13.831027966Z"

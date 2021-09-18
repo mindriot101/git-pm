@@ -1,4 +1,5 @@
 use eyre::{Result, WrapErr};
+use std::collections::HashMap;
 use structopt::StructOpt;
 
 mod index;
@@ -12,6 +13,7 @@ enum Opts {
     Add {
         entry: Vec<String>,
     },
+    Show,
 }
 
 struct Manager {}
@@ -31,6 +33,41 @@ impl Manager {
         index.create_task(&entry_text).wrap_err("creating task")?;
         Ok(())
     }
+
+    fn show(&self) -> Result<()> {
+        let index = index::Index::load().wrap_err("loading index")?;
+        let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
+
+        for task in &index.tasks {
+            let e = store.entry(task.status).or_insert(Vec::new());
+            e.push(task);
+        }
+
+        let to_print_statuses = &[
+            index::Status::Todo,
+            index::Status::Doing,
+            index::Status::Done,
+        ];
+
+        for status in to_print_statuses {
+            println!("{}", status);
+
+            match store.get_mut(status) {
+                None => println!("... no tasks found"),
+                Some(ts) => {
+                    ts.sort_by_key(|task| task.id);
+                    for task in ts {
+                        let detail = task.detail().wrap_err_with(|| {
+                            format!("reading task detail for task {}", task.id)
+                        })?;
+                        println!("{:03}: {}", task.id, detail.summary);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -43,6 +80,7 @@ fn main() -> Result<()> {
     match args {
         Opts::Init { name } => manager.init(name).wrap_err("init")?,
         Opts::Add { entry } => manager.add(entry).wrap_err("add")?,
+        Opts::Show => manager.show().wrap_err("show")?,
     }
 
     Ok(())
