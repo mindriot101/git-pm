@@ -10,6 +10,7 @@ pub struct Meta {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Status {
+    None,
     Todo,
     Doing,
     Done,
@@ -35,6 +36,32 @@ pub struct Index {
     pub tasks: Vec<Task>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskDetail {
+    pub id: u64,
+    pub summary: String,
+    pub description: Option<String>,
+}
+
+impl TaskDetail {
+    fn save(&self) -> Result<()> {
+        let path = self.target_path().wrap_err("finding detail path")?;
+        let body = serde_yaml::to_string(self).wrap_err("serializing task detail")?;
+        std::fs::write(path, body).wrap_err("saving task detail")?;
+        Ok(())
+    }
+
+    fn target_path(&self) -> Result<PathBuf> {
+        let pm_dir = find_project_root()
+            .map(|r| r.join("pm"))
+            .wrap_err("computing pm dir")?;
+        let tasks_dir = pm_dir.join("tasks");
+        std::fs::create_dir_all(&tasks_dir).wrap_err("creating tasks dir")?;
+        let filename = format!("{:03}.yml", self.id);
+        Ok(tasks_dir.join(filename))
+    }
+}
+
 impl Index {
     pub fn new(name: impl Into<String>) -> Result<Index> {
         Ok(Index {
@@ -53,7 +80,37 @@ impl Index {
     }
 
     pub fn load() -> Result<Index> {
-        todo!()
+        let path = find_index_path().wrap_err("finding index path")?;
+        let contents = std::fs::read_to_string(&path)
+            .wrap_err_with(|| format!("reading config file {:?}", &path))?;
+        let index: Index = serde_yaml::from_str(&contents).wrap_err("parsing index")?;
+        Ok(index)
+    }
+
+    pub fn create_task(&mut self, entry: &str) -> Result<()> {
+        let task = Task {
+            id: self.next_id(),
+            status: Status::Todo,
+            changes: vec![Change {
+                from: Status::None,
+                to: Status::Todo,
+                on: Utc::now(),
+            }],
+        };
+        let detail = TaskDetail {
+            id: task.id,
+            summary: entry.into(),
+            description: None,
+        };
+        self.tasks.push(task);
+        self.save().wrap_err("saving")?;
+        detail.save().wrap_err("saving task detail")?;
+
+        Ok(())
+    }
+
+    fn next_id(&self) -> u64 {
+        self.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1
     }
 }
 
