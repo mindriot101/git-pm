@@ -32,12 +32,6 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:24:55.061144541Z"
-  - id: 4
-    status: Todo
-    changes:
-      - from: None
-        to: Todo
-        "on": "2021-09-19T00:09:18.432124975Z"
   - id: 5
     status: Done
     changes:
