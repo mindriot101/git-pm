@@ -28,6 +28,19 @@ impl fmt::Display for Status {
     }
 }
 
+impl std::str::FromStr for Status {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "todo" => Ok(Status::Todo),
+            "doing" => Ok(Status::Doing),
+            "done" => Ok(Status::Done),
+            other => Err(eyre::eyre!("invalid status {}", other)),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Change {
     pub from: Status,
@@ -135,6 +148,36 @@ impl Index {
         self.save().wrap_err("saving")?;
         detail.save().wrap_err("saving task detail")?;
 
+        Ok(())
+    }
+
+    pub fn move_task(&mut self, task_id: u64, new_status: Status) -> Result<()> {
+        let mut found = false;
+        for task in self.tasks.iter_mut() {
+            if task.id == task_id {
+                found = true;
+
+                if task.status == new_status {
+                    // do not update
+                    break;
+                }
+
+                let change = Change {
+                    from: task.status,
+                    to: new_status,
+                    on: Utc::now(),
+                };
+                task.changes.push(change);
+                task.status = new_status;
+                break;
+            }
+        }
+
+        if !found {
+            return Err(eyre::eyre!("could not find task {}", task_id));
+        }
+
+        self.save().wrap_err("saving")?;
         Ok(())
     }
 

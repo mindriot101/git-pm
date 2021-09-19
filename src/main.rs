@@ -14,6 +14,10 @@ enum Opts {
         entry: Vec<String>,
     },
     Show,
+    Move {
+        task_id: u64,
+        status: index::Status,
+    },
 }
 
 struct Manager {}
@@ -68,6 +72,12 @@ impl Manager {
 
         Ok(())
     }
+
+    fn move_task(&self, task_id: u64, status: index::Status) -> Result<()> {
+        let mut index = index::Index::load().wrap_err("loading index")?;
+        index.move_task(task_id, status).wrap_err("moving task")?;
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -81,6 +91,7 @@ fn main() -> Result<()> {
         Opts::Init { name } => manager.init(name).wrap_err("init")?,
         Opts::Add { entry } => manager.add(entry).wrap_err("add")?,
         Opts::Show => manager.show().wrap_err("show")?,
+        Opts::Move { task_id, status } => manager.move_task(task_id, status).wrap_err("move")?,
     }
 
     Ok(())
