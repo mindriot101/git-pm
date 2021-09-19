@@ -138,12 +138,15 @@ impl Index {
         })
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn save(&self, force: bool) -> Result<()> {
         let path = find_index_path().wrap_err("finding index path")?;
+        if path.is_file() && !force {
+            return Err(crate::error::PmError::IndexExists.into());
+        }
         ensure_parent_dir(&path)
             .wrap_err_with(|| format!("ensuring parent dir for path {:?}", path))?;
         let body = serde_yaml::to_string(self).wrap_err("serializing index")?;
-        std::fs::write(path, body).wrap_err("saving index")?;
+        std::fs::write(path, body).wrap_err("writing index")?;
         Ok(())
     }
 
@@ -170,7 +173,7 @@ impl Index {
 
         self.tasks.push(task);
         // TODO(srw): handle the case of one file not saving and rolling back
-        self.save().wrap_err("saving")?;
+        self.save(true).wrap_err("saving")?;
         detail.save().wrap_err("saving task detail")?;
 
         Ok(())
@@ -202,7 +205,7 @@ impl Index {
             return Err(eyre::eyre!("could not find task {}", task_id));
         }
 
-        self.save().wrap_err("saving")?;
+        self.save(true).wrap_err("saving")?;
         Ok(())
     }
 
@@ -213,7 +216,7 @@ impl Index {
         if let Some(idx) = self.tasks.iter().position(|t| t.id == task_id) {
             self.tasks.remove(idx);
         }
-        self.save().wrap_err("saving")?;
+        self.save(true).wrap_err("saving")?;
         Ok(())
     }
 

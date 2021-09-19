@@ -68,3 +68,15 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:34:11.920449Z"
+  - id: 8
+    status: Done
+    changes:
+      - from: None
+        to: Todo
+        "on": "2021-09-19T15:55:06.652095753Z"
+      - from: Todo
+        to: Doing
+        "on": "2021-09-19T15:55:11.654027107Z"
+      - from: Doing
+        to: Done
+        "on": "2021-09-19T15:57:58.001463844Z"

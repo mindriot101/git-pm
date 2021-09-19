@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::process;
 use structopt::StructOpt;
 
+mod error;
 mod index;
 
 #[derive(StructOpt)]
@@ -10,6 +11,8 @@ enum Opts {
     Init {
         #[structopt(short, long)]
         name: String,
+        #[structopt(short, long)]
+        force: bool,
     },
     Add {
         entry: Vec<String>,
@@ -36,11 +39,22 @@ enum Opts {
 struct Manager {}
 
 impl Manager {
-    fn init(&self, name: String) -> Result<()> {
-        log::info!("init");
-
+    fn init(&self, name: String, force: bool) -> Result<()> {
         let index = index::Index::new(name).wrap_err("loading configuration")?;
-        index.save().wrap_err("saving index")?;
+        match index.save(force) {
+            Ok(_) => {}
+            Err(e) => {
+                if e.is::<crate::error::PmError>() {
+                    match e.downcast::<crate::error::PmError>() {
+                        Ok(crate::error::PmError::IndexExists) => {
+                            eprintln!("index already exists, not overwriting");
+                            std::process::exit(1);
+                        }
+                        Err(e) => return Err(e.into()),
+                    }
+                }
+            }
+        }
         Ok(())
     }
 
@@ -143,7 +157,7 @@ fn main() -> Result<()> {
     let manager = Manager {};
 
     match args {
-        Opts::Init { name } => manager.init(name).wrap_err("init")?,
+        Opts::Init { name, force } => manager.init(name, force).wrap_err("init")?,
         Opts::Add { entry } => manager.add(entry).wrap_err("add")?,
         Opts::Show => manager.show().wrap_err("show")?,
         Opts::Move { task_id, status } => manager.move_task(task_id, status).wrap_err("move")?,
