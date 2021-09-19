@@ -87,14 +87,20 @@ tasks:
         to: Todo
         "on": "2021-09-19T15:59:41.731718857Z"
   - id: 10
-    status: Todo
+    status: Done
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T15:59:53.179401995Z"
+      - from: Todo
+        to: Done
+        "on": "2021-09-19T16:25:07.739663710Z"
   - id: 11
-    status: Todo
+    status: Done
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T16:00:38.893185909Z"
+      - from: Todo
+        to: Done
+        "on": "2021-09-19T16:26:18.570567608Z"
