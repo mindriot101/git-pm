@@ -35,6 +35,7 @@ impl Manager {
         let mut index = index::Index::load().wrap_err("loading index")?;
         let entry_text = entry.join(" ");
         index.create_task(&entry_text).wrap_err("creating task")?;
+        self.show().wrap_err("showing")?;
         Ok(())
     }
 
@@ -78,6 +79,7 @@ impl Manager {
     fn move_task(&self, task_id: u64, status: index::Status) -> Result<()> {
         let mut index = index::Index::load().wrap_err("loading index")?;
         index.move_task(task_id, status).wrap_err("moving task")?;
+        self.show().wrap_err("showing")?;
         Ok(())
     }
 }
