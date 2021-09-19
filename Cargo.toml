@@ -14,4 +14,5 @@ log = "0.4.14"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_yaml = "0.8.21"
 structopt = "0.3.23"
+syntect = "4.6.0"
 thiserror = "1.0.29"

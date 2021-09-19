@@ -4,6 +4,7 @@ use std::process;
 use structopt::StructOpt;
 
 mod error;
+mod highlighter;
 mod index;
 
 #[derive(StructOpt)]
@@ -38,9 +39,11 @@ enum Opts {
     },
 }
 
-struct Manager {}
+struct Manager<'a> {
+    highlighter: highlighter::Highlighter<'a>,
+}
 
-impl Manager {
+impl<'a> Manager<'a> {
     fn init(&self, name: String, force: bool) -> Result<()> {
         let index = index::Index::new(name).wrap_err("loading configuration")?;
         match index.save(force) {
@@ -60,14 +63,14 @@ impl Manager {
         Ok(())
     }
 
-    fn add(&self, entry: Vec<String>) -> Result<()> {
+    fn add(&mut self, entry: Vec<String>) -> Result<()> {
         let mut index = index::Index::load().wrap_err("loading index")?;
         index.create_task(&entry).wrap_err("creating task")?;
         self.show(None).wrap_err("showing")?;
         Ok(())
     }
 
-    fn show(&self, task_id: Option<u64>) -> Result<()> {
+    fn show(&mut self, task_id: Option<u64>) -> Result<()> {
         let index = index::Index::load().wrap_err("loading index")?;
         if let Some(id) = task_id {
             let task = index.get_task(id).expect("could not find task in index");
@@ -81,7 +84,9 @@ impl Manager {
             }
             println!();
             // TODO: nice formatting and colours
-            println!("{}", detail.description.trim());
+            // println!("{}", detail.description.trim());
+            self.highlighter.print(detail.description.trim());
+            println!();
         } else {
             let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
 
@@ -128,14 +133,14 @@ impl Manager {
         Ok(())
     }
 
-    fn move_task(&self, task_id: u64, status: index::Status) -> Result<()> {
+    fn move_task(&mut self, task_id: u64, status: index::Status) -> Result<()> {
         let mut index = index::Index::load().wrap_err("loading index")?;
         index.move_task(task_id, status).wrap_err("moving task")?;
         self.show(None).wrap_err("showing")?;
         Ok(())
     }
 
-    fn delete_task(&self, task_id: u64) -> Result<()> {
+    fn delete_task(&mut self, task_id: u64) -> Result<()> {
         let mut index = index::Index::load().wrap_err("loading index")?;
         index
             .delete_task(task_id)
@@ -171,7 +176,8 @@ fn main() -> Result<()> {
     env_logger::init();
     let args = Opts::from_args();
 
-    let manager = Manager {};
+    let highlighter = highlighter::Highlighter::new("base16-eighties.dark");
+    let mut manager = Manager { highlighter };
 
     match args {
         Opts::Init { name, force } => manager.init(name, force).wrap_err("init")?,
