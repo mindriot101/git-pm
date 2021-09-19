@@ -54,6 +54,7 @@ impl Manager {
         ];
 
         for status in to_print_statuses {
+            println!("----------");
             println!("{}", status);
 
             match store.get_mut(status) {
@@ -68,6 +69,7 @@ impl Manager {
                     }
                 }
             }
+            println!();
         }
 
         Ok(())

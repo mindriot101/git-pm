@@ -145,6 +145,7 @@ impl Index {
             description: None,
         };
         self.tasks.push(task);
+        // TODO(srw): handle the case of one file not saving and rolling back
         self.save().wrap_err("saving")?;
         detail.save().wrap_err("saving task detail")?;
 
