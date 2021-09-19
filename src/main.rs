@@ -1,5 +1,6 @@
 use eyre::{Result, WrapErr};
 use std::collections::HashMap;
+use std::process;
 use structopt::StructOpt;
 
 mod index;
@@ -19,6 +20,9 @@ enum Opts {
         status: index::Status,
     },
     Delete {
+        task_id: u64,
+    },
+    Edit {
         task_id: u64,
     },
 }
@@ -94,6 +98,27 @@ impl Manager {
         self.show().wrap_err("showing")?;
         Ok(())
     }
+
+    fn edit_task(&self, task_id: u64) -> Result<()> {
+        let index = index::Index::load().wrap_err("loading index")?;
+        let detail_path = index
+            .detail_path(task_id)
+            .wrap_err("fetching detail path")?;
+
+        let editor = std::env::var("EDITOR").unwrap_or("vim".to_string());
+        let mut child = process::Command::new(editor)
+            .args(&[detail_path])
+            .spawn()
+            .wrap_err("spawning editor")?;
+        let status = child.wait().wrap_err("getting command exit status")?;
+        if !status.success() {
+            return Err(eyre::eyre!(
+                "editor command exited with status {}",
+                status.code().expect("fetching error code")
+            ));
+        }
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -109,6 +134,7 @@ fn main() -> Result<()> {
         Opts::Show => manager.show().wrap_err("show")?,
         Opts::Move { task_id, status } => manager.move_task(task_id, status).wrap_err("move")?,
         Opts::Delete { task_id } => manager.delete_task(task_id).wrap_err("deleting")?,
+        Opts::Edit { task_id } => manager.edit_task(task_id).wrap_err("editing")?,
     }
 
     Ok(())
