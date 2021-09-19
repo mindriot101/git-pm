@@ -1,6 +1,0 @@
----
-id: 10
-summary: Use markdown for the task details
-tags: []
-description: |
-  It would be nice to use markdown to render the task details. This is much friendlier than using a yaml field.

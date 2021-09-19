@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,15 +61,24 @@ impl Task {
         let contents =
             std::fs::read_to_string(self.target_path().wrap_err("computing target path")?)
                 .wrap_err("reading task detail")?;
-        let detail: TaskDetail = serde_yaml::from_str(&contents).wrap_err("parsing task detail")?;
-        Ok(detail)
+        let mut parts = contents.splitn(3, "---");
+        let _ = parts.next().unwrap();
+        let header: TaskDetailHeader =
+            serde_yaml::from_str(parts.next().unwrap()).wrap_err("parsing task detail")?;
+        let description = parts.next().unwrap();
+        Ok(TaskDetail {
+            id: header.id,
+            summary: header.summary,
+            tags: header.tags,
+            description: description.to_string(),
+        })
     }
 
     fn target_path(&self) -> Result<PathBuf> {
         let pm_dir = find_project_root()
             .map(|r| r.join("pm"))
             .wrap_err("computing pm dir")?;
-        Ok(pm_dir.join("tasks").join(format!("{:03}.yml", self.id)))
+        Ok(pm_dir.join("tasks").join(format!("{:03}.md", self.id)))
     }
 }
 
@@ -79,10 +89,17 @@ pub struct Index {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct TaskDetailHeader {
+    id: u64,
+    summary: String,
+    tags: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TaskDetail {
     pub id: u64,
     pub summary: String,
-    pub description: Option<String>,
+    pub description: String,
     pub tags: Vec<String>,
 }
 
@@ -107,16 +124,28 @@ impl TaskDetail {
         TaskDetail {
             id: task_id,
             summary,
-            description: None,
+            description: "".to_string(),
             tags,
         }
     }
 
     fn save(&self) -> Result<()> {
         let path = self.target_path().wrap_err("finding detail path")?;
-        let body = serde_yaml::to_string(self).wrap_err("serializing task detail")?;
-        std::fs::write(path, body).wrap_err("saving task detail")?;
+        let header = self.header();
+        let header = serde_yaml::to_string(&header).wrap_err("serializing task detail")?;
+        let mut f = std::fs::File::create(path).wrap_err("creating file")?;
+        writeln!(&mut f, "{}", header)?;
+        writeln!(&mut f, "---")?;
+        writeln!(&mut f, "{}", self.description.trim())?;
         Ok(())
+    }
+
+    fn header(&self) -> TaskDetailHeader {
+        TaskDetailHeader {
+            id: self.id,
+            summary: self.summary.clone(),
+            tags: self.tags.clone(),
+        }
     }
 
     fn target_path(&self) -> Result<PathBuf> {
@@ -125,7 +154,7 @@ impl TaskDetail {
             .wrap_err("computing pm dir")?;
         let tasks_dir = pm_dir.join("tasks");
         std::fs::create_dir_all(&tasks_dir).wrap_err("creating tasks dir")?;
-        let filename = format!("{:03}.yml", self.id);
+        let filename = format!("{:03}.md", self.id);
         Ok(tasks_dir.join(filename))
     }
 }
@@ -179,6 +208,16 @@ impl Index {
         Ok(())
     }
 
+    pub fn get_task(&self, task_id: u64) -> Option<&Task> {
+        for task in &self.tasks {
+            if task.id == task_id {
+                return Some(task);
+            }
+        }
+
+        None
+    }
+
     pub fn move_task(&mut self, task_id: u64, new_status: Status) -> Result<()> {
         let mut found = false;
         for task in self.tasks.iter_mut() {
@@ -224,7 +263,7 @@ impl Index {
         let pm_dir = find_project_root()
             .map(|r| r.join("pm"))
             .wrap_err("computing pm dir")?;
-        Ok(pm_dir.join("tasks").join(format!("{:03}.yml", task_id)))
+        Ok(pm_dir.join("tasks").join(format!("{:03}.md", task_id)))
     }
 
     fn next_id(&self) -> u64 {
