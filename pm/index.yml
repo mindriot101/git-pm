@@ -3,11 +3,17 @@ meta:
   name: bar
 tasks:
   - id: 2
-    status: Todo
+    status: Done
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T00:08:51.745049948Z"
+      - from: Todo
+        to: Doing
+        "on": "2021-09-19T00:34:55.147114159Z"
+      - from: Doing
+        to: Done
+        "on": "2021-09-19T00:53:31.513796064Z"
   - id: 3
     status: Done
     changes:

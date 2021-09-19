@@ -83,9 +83,35 @@ pub struct TaskDetail {
     pub id: u64,
     pub summary: String,
     pub description: Option<String>,
+    pub tags: Vec<String>,
 }
 
 impl TaskDetail {
+    fn new(task_id: u64, entry: &[String]) -> TaskDetail {
+        let summary_entries = entry
+            .iter()
+            .filter(|w| !(w.starts_with(':') && w.ends_with(':')))
+            .map(|w| w.as_str())
+            .collect::<Vec<_>>();
+        let summary = summary_entries.join(" ");
+        let tags = entry
+            .iter()
+            .filter_map(|e| {
+                if e.starts_with(':') && e.ends_with(':') {
+                    Some(e.chars().skip(1).take_while(|c| *c != ':').collect())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        TaskDetail {
+            id: task_id,
+            summary,
+            description: None,
+            tags,
+        }
+    }
+
     fn save(&self) -> Result<()> {
         let path = self.target_path().wrap_err("finding detail path")?;
         let body = serde_yaml::to_string(self).wrap_err("serializing task detail")?;
@@ -129,7 +155,7 @@ impl Index {
         Ok(index)
     }
 
-    pub fn create_task(&mut self, entry: &str) -> Result<()> {
+    pub fn create_task(&mut self, entry: &[String]) -> Result<()> {
         let task = Task {
             id: self.next_id(),
             status: Status::Todo,
@@ -139,11 +165,9 @@ impl Index {
                 on: Utc::now(),
             }],
         };
-        let detail = TaskDetail {
-            id: task.id,
-            summary: entry.into(),
-            description: None,
-        };
+
+        let detail = TaskDetail::new(task.id, entry);
+
         self.tasks.push(task);
         // TODO(srw): handle the case of one file not saving and rolling back
         self.save().wrap_err("saving")?;
@@ -260,5 +284,28 @@ tasks:
 
         let parsed: Index = serde_yaml::from_str(text).unwrap();
         assert_eq!(parsed.meta.name, "My first project");
+    }
+
+    #[test]
+    fn parse_entry_for_task_detail_no_tags() {
+        let entry = vec!["A".to_string(), "basic".to_string(), "title".to_string()];
+        let task_detail = TaskDetail::new(0, &entry);
+
+        assert_eq!(task_detail.summary, "A basic title".to_string());
+        assert_eq!(task_detail.tags, Vec::<String>::new());
+    }
+
+    #[test]
+    fn parse_entry_for_task_detail_with_tags() {
+        let entry = vec![
+            "A".to_string(),
+            "basic".to_string(),
+            ":tag:".to_string(),
+            "title".to_string(),
+        ];
+        let task_detail = TaskDetail::new(0, &entry);
+
+        assert_eq!(task_detail.summary, "A basic title".to_string());
+        assert_eq!(task_detail.tags, vec!["tag".to_string()]);
     }
 }

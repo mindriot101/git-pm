@@ -46,8 +46,7 @@ impl Manager {
 
     fn add(&self, entry: Vec<String>) -> Result<()> {
         let mut index = index::Index::load().wrap_err("loading index")?;
-        let entry_text = entry.join(" ");
-        index.create_task(&entry_text).wrap_err("creating task")?;
+        index.create_task(&entry).wrap_err("creating task")?;
         self.show().wrap_err("showing")?;
         Ok(())
     }
@@ -79,7 +78,16 @@ impl Manager {
                         let detail = task.detail().wrap_err_with(|| {
                             format!("reading task detail for task {}", task.id)
                         })?;
-                        println!("{:03}: {}", task.id, detail.summary);
+                        if !detail.tags.is_empty() {
+                            let tags_entry = {
+                                let tags =
+                                    detail.tags.iter().map(|t| t.as_str()).collect::<Vec<_>>();
+                                tags.join(" ")
+                            };
+                            println!("{:03}: {}\t\t:{}:", task.id, detail.summary, tags_entry);
+                        } else {
+                            println!("{:03}: {}", task.id, detail.summary);
+                        }
                     }
                 }
             }
