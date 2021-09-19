@@ -1,0 +1,5 @@
+---
+id: 7
+summary: Support start and finish shortcuts
+description: |
+  These should be shortcuts that move tasks from Todo -> Doing, and Doing -> Done.

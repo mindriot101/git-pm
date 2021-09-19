@@ -25,6 +25,12 @@ enum Opts {
     Edit {
         task_id: u64,
     },
+    Start {
+        task_id: u64,
+    },
+    Finish {
+        task_id: u64,
+    },
 }
 
 struct Manager {}
@@ -135,6 +141,12 @@ fn main() -> Result<()> {
         Opts::Move { task_id, status } => manager.move_task(task_id, status).wrap_err("move")?,
         Opts::Delete { task_id } => manager.delete_task(task_id).wrap_err("deleting")?,
         Opts::Edit { task_id } => manager.edit_task(task_id).wrap_err("editing")?,
+        Opts::Start { task_id } => manager
+            .move_task(task_id, index::Status::Doing)
+            .wrap_err("starting task")?,
+        Opts::Finish { task_id } => manager
+            .move_task(task_id, index::Status::Done)
+            .wrap_err("finishing task")?,
     }
 
     Ok(())
