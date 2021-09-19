@@ -18,6 +18,9 @@ enum Opts {
         task_id: u64,
         status: index::Status,
     },
+    Delete {
+        task_id: u64,
+    },
 }
 
 struct Manager {}
@@ -82,6 +85,15 @@ impl Manager {
         self.show().wrap_err("showing")?;
         Ok(())
     }
+
+    fn delete_task(&self, task_id: u64) -> Result<()> {
+        let mut index = index::Index::load().wrap_err("loading index")?;
+        index
+            .delete_task(task_id)
+            .wrap_err("deleting task from index")?;
+        self.show().wrap_err("showing")?;
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -96,6 +108,7 @@ fn main() -> Result<()> {
         Opts::Add { entry } => manager.add(entry).wrap_err("add")?,
         Opts::Show => manager.show().wrap_err("show")?,
         Opts::Move { task_id, status } => manager.move_task(task_id, status).wrap_err("move")?,
+        Opts::Delete { task_id } => manager.delete_task(task_id).wrap_err("deleting")?,
     }
 
     Ok(())

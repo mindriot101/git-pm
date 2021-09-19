@@ -2,21 +2,6 @@
 meta:
   name: bar
 tasks:
-  - id: 1
-    status: Todo
-    changes:
-      - from: None
-        to: Todo
-        "on": "2021-09-18T23:57:13.831027966Z"
-      - from: Todo
-        to: Todo
-        "on": "2021-09-19T00:06:21.305557648Z"
-      - from: Todo
-        to: Done
-        "on": "2021-09-19T00:07:07.025138545Z"
-      - from: Done
-        to: Todo
-        "on": "2021-09-19T00:07:10.431384140Z"
   - id: 2
     status: Todo
     changes:
@@ -24,7 +9,7 @@ tasks:
         to: Todo
         "on": "2021-09-19T00:08:51.745049948Z"
   - id: 3
-    status: Todo
+    status: Done
     changes:
       - from: None
         to: Todo
@@ -35,6 +20,12 @@ tasks:
       - from: Doing
         to: Todo
         "on": "2021-09-19T00:10:04.644043624Z"
+      - from: Todo
+        to: Doing
+        "on": "2021-09-19T00:11:24.837397382Z"
+      - from: Doing
+        to: Done
+        "on": "2021-09-19T00:24:55.061144541Z"
   - id: 4
     status: Todo
     changes:

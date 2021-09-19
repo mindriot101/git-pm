@@ -182,6 +182,24 @@ impl Index {
         Ok(())
     }
 
+    pub fn delete_task(&mut self, task_id: u64) -> Result<()> {
+        let detail_path = self.detail_path(task_id).wrap_err("getting detail path")?;
+        std::fs::remove_file(&detail_path)
+            .wrap_err_with(|| format!("deleting file {:?}", &detail_path))?;
+        if let Some(idx) = self.tasks.iter().position(|t| t.id == task_id) {
+            self.tasks.remove(idx);
+        }
+        self.save().wrap_err("saving")?;
+        Ok(())
+    }
+
+    pub fn detail_path(&self, task_id: u64) -> Result<PathBuf> {
+        let pm_dir = find_project_root()
+            .map(|r| r.join("pm"))
+            .wrap_err("computing pm dir")?;
+        Ok(pm_dir.join("tasks").join(format!("{:03}.yml", task_id)))
+    }
+
     fn next_id(&self) -> u64 {
         self.tasks.iter().map(|t| t.id).max().unwrap_or(0) + 1
     }
