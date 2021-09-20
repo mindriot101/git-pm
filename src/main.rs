@@ -1,5 +1,4 @@
 use eyre::{Result, WrapErr};
-use std::collections::HashMap;
 use std::process;
 use structopt::StructOpt;
 
@@ -88,12 +87,12 @@ impl<'a> Manager<'a> {
             self.highlighter.print(detail.description.trim());
             println!();
         } else {
-            let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
+            // let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
 
-            for task in &index.tasks {
-                let e = store.entry(task.status).or_insert(Vec::new());
-                e.push(task);
-            }
+            // for task in &index.tasks {
+            //     let e = store.entry(task.status).or_insert(Vec::new());
+            //     e.push(task);
+            // }
 
             let to_print_statuses = &[
                 index::Status::Todo,
@@ -105,10 +104,9 @@ impl<'a> Manager<'a> {
                 println!("----------");
                 println!("{}", status);
 
-                match store.get_mut(status) {
+                match index.sorted_tasks_with_status(*status) {
                     None => println!("... no tasks found"),
                     Some(ts) => {
-                        ts.sort_by_key(|task| task.id);
                         for task in ts {
                             let detail = task.detail().wrap_err_with(|| {
                                 format!("reading task detail for task {}", task.id)
