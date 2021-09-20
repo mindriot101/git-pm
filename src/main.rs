@@ -20,6 +20,12 @@ enum Opts {
     Show {
         task_id: Option<u64>,
     },
+    Inc {
+        task_id: u64,
+    },
+    Dec {
+        task_id: u64,
+    },
     Move {
         task_id: u64,
         status: index::Status,
@@ -167,6 +173,13 @@ impl<'a> Manager<'a> {
         }
         Ok(())
     }
+
+    fn update_task_priority(&mut self, task_id: u64, priority: index::Priority) -> Result<()> {
+        let mut index = index::Index::load().wrap_err("loading index")?;
+        index.update_task_priority(task_id, priority)?;
+        self.show(None).wrap_err("showing")?;
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -190,6 +203,12 @@ fn main() -> Result<()> {
         Opts::Finish { task_id } => manager
             .move_task(task_id, index::Status::Done)
             .wrap_err("finishing task")?,
+        Opts::Inc { task_id } => manager
+            .update_task_priority(task_id, index::Priority::Increase)
+            .wrap_err("increasing task priority")?,
+        Opts::Dec { task_id } => manager
+            .update_task_priority(task_id, index::Priority::Decrease)
+            .wrap_err("decreasing task priority")?,
     }
 
     Ok(())

@@ -54,7 +54,7 @@ pub struct Task {
     pub id: u64,
     pub status: Status,
     pub changes: Vec<Change>,
-    pub priority: Option<u64>,
+    pub priority: Option<i64>,
 }
 
 impl Task {
@@ -158,6 +158,11 @@ impl TaskDetail {
         let filename = format!("{:03}.md", self.id);
         Ok(tasks_dir.join(filename))
     }
+}
+
+pub enum Priority {
+    Increase,
+    Decrease,
 }
 
 impl Index {
@@ -287,6 +292,19 @@ impl Index {
         });
 
         Some(tasks)
+    }
+
+    pub fn update_task_priority(&mut self, task_id: u64, priority: Priority) -> Result<()> {
+        match self.tasks.iter_mut().filter(|t| t.id == task_id).next() {
+            Some(task) => match priority {
+                Priority::Increase => task.priority = Some(task.priority.unwrap_or(0) + 1),
+                Priority::Decrease => task.priority = Some(task.priority.unwrap_or(0) - 1),
+            },
+            None => return Ok(()),
+        }
+
+        self.save(true).wrap_err("saving")?;
+        Ok(())
     }
 
     fn next_id(&self) -> u64 {
