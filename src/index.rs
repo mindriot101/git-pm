@@ -54,6 +54,7 @@ pub struct Task {
     pub id: u64,
     pub status: Status,
     pub changes: Vec<Change>,
+    pub priority: Option<u64>,
 }
 
 impl Task {
@@ -196,6 +197,7 @@ impl Index {
                 to: Status::Todo,
                 on: Utc::now(),
             }],
+            priority: None,
         };
 
         let detail = TaskDetail::new(task.id, entry);
