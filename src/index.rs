@@ -42,18 +42,19 @@ impl std::str::FromStr for Status {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Change {
     pub from: Status,
     pub to: Status,
     pub on: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
     pub id: u64,
     pub status: Status,
     pub changes: Vec<Change>,
+    pub priority: Option<i64>,
 }
 
 impl Task {
@@ -159,6 +160,11 @@ impl TaskDetail {
     }
 }
 
+pub enum Priority {
+    Increase,
+    Decrease,
+}
+
 impl Index {
     pub fn new(name: impl Into<String>) -> Result<Index> {
         Ok(Index {
@@ -196,6 +202,7 @@ impl Index {
                 to: Status::Todo,
                 on: Utc::now(),
             }],
+            priority: None,
         };
 
         let detail = TaskDetail::new(task.id, entry);
@@ -264,6 +271,40 @@ impl Index {
             .map(|r| r.join("pm"))
             .wrap_err("computing pm dir")?;
         Ok(pm_dir.join("tasks").join(format!("{:03}.md", task_id)))
+    }
+
+    pub fn sorted_tasks_with_status(&self, status: Status) -> Option<Vec<Task>> {
+        let mut tasks: Vec<_> = self
+            .tasks
+            .iter()
+            .cloned()
+            .filter(|t| t.status == status)
+            .collect();
+        if tasks.is_empty() {
+            return None;
+        }
+
+        tasks.sort_by(|a, b| match (a.priority, b.priority) {
+            (Some(pa), Some(pb)) => pa.cmp(&pb),
+            (Some(_), None) => std::cmp::Ordering::Greater,
+            (None, Some(_)) => std::cmp::Ordering::Less,
+            (None, None) => a.id.cmp(&b.id),
+        });
+
+        Some(tasks)
+    }
+
+    pub fn update_task_priority(&mut self, task_id: u64, priority: Priority) -> Result<()> {
+        match self.tasks.iter_mut().filter(|t| t.id == task_id).next() {
+            Some(task) => match priority {
+                Priority::Increase => task.priority = Some(task.priority.unwrap_or(0) + 1),
+                Priority::Decrease => task.priority = Some(task.priority.unwrap_or(0) - 1),
+            },
+            None => return Ok(()),
+        }
+
+        self.save(true).wrap_err("saving")?;
+        Ok(())
     }
 
     fn next_id(&self) -> u64 {
@@ -349,5 +390,61 @@ tasks:
 
         assert_eq!(task_detail.summary, "A basic title".to_string());
         assert_eq!(task_detail.tags, vec!["tag".to_string()]);
+    }
+
+    #[test]
+    fn task_sorting_without_priorities() {
+        let tasks = vec![
+            Task {
+                id: 1,
+                status: Status::Done,
+                changes: vec![],
+                priority: None,
+            },
+            Task {
+                id: 2,
+                status: Status::Done,
+                changes: vec![],
+                priority: None,
+            },
+        ];
+
+        let index = Index {
+            meta: Meta {
+                name: "Foo".to_string(),
+            },
+            tasks,
+        };
+        let retrieved_tasks = index.sorted_tasks_with_status(Status::Done).unwrap();
+        let ids: Vec<_> = retrieved_tasks.iter().map(|t| t.id).collect();
+        assert_eq!(ids, &[1, 2]);
+    }
+
+    #[test]
+    fn task_sorting_with_priorities() {
+        let tasks = vec![
+            Task {
+                id: 1,
+                status: Status::Done,
+                changes: vec![],
+                priority: Some(100),
+            },
+            Task {
+                id: 2,
+                status: Status::Done,
+                changes: vec![],
+                priority: None,
+            },
+        ];
+
+        let index = Index {
+            meta: Meta {
+                name: "Foo".to_string(),
+            },
+            tasks,
+        };
+        let retrieved_tasks = index.sorted_tasks_with_status(Status::Done).unwrap();
+        let ids: Vec<_> = retrieved_tasks.iter().map(|t| t.id).collect();
+        assert_eq!(ids, &[2, 1]);
     }
 }

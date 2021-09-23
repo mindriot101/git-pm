@@ -1,5 +1,4 @@
 use eyre::{Result, WrapErr};
-use std::collections::HashMap;
 use std::process;
 use structopt::StructOpt;
 
@@ -20,6 +19,12 @@ enum Opts {
     },
     Show {
         task_id: Option<u64>,
+    },
+    Inc {
+        task_id: u64,
+    },
+    Dec {
+        task_id: u64,
     },
     Move {
         task_id: u64,
@@ -88,12 +93,12 @@ impl<'a> Manager<'a> {
             self.highlighter.print(detail.description.trim());
             println!();
         } else {
-            let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
+            // let mut store: HashMap<index::Status, Vec<&index::Task>> = HashMap::new();
 
-            for task in &index.tasks {
-                let e = store.entry(task.status).or_insert(Vec::new());
-                e.push(task);
-            }
+            // for task in &index.tasks {
+            //     let e = store.entry(task.status).or_insert(Vec::new());
+            //     e.push(task);
+            // }
 
             let to_print_statuses = &[
                 index::Status::Todo,
@@ -105,10 +110,9 @@ impl<'a> Manager<'a> {
                 println!("----------");
                 println!("{}", status);
 
-                match store.get_mut(status) {
+                match index.sorted_tasks_with_status(*status) {
                     None => println!("... no tasks found"),
                     Some(ts) => {
-                        ts.sort_by_key(|task| task.id);
                         for task in ts {
                             let detail = task.detail().wrap_err_with(|| {
                                 format!("reading task detail for task {}", task.id)
@@ -169,6 +173,13 @@ impl<'a> Manager<'a> {
         }
         Ok(())
     }
+
+    fn update_task_priority(&mut self, task_id: u64, priority: index::Priority) -> Result<()> {
+        let mut index = index::Index::load().wrap_err("loading index")?;
+        index.update_task_priority(task_id, priority)?;
+        self.show(None).wrap_err("showing")?;
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -192,6 +203,12 @@ fn main() -> Result<()> {
         Opts::Finish { task_id } => manager
             .move_task(task_id, index::Status::Done)
             .wrap_err("finishing task")?,
+        Opts::Inc { task_id } => manager
+            .update_task_priority(task_id, index::Priority::Increase)
+            .wrap_err("increasing task priority")?,
+        Opts::Dec { task_id } => manager
+            .update_task_priority(task_id, index::Priority::Decrease)
+            .wrap_err("decreasing task priority")?,
     }
 
     Ok(())

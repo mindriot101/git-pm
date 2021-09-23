@@ -14,6 +14,7 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:53:31.513796064Z"
+    priority: ~
   - id: 3
     status: Done
     changes:
@@ -32,6 +33,7 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:24:55.061144541Z"
+    priority: ~
   - id: 5
     status: Done
     changes:
@@ -44,6 +46,7 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:11:03.994396484Z"
+    priority: ~
   - id: 6
     status: Done
     changes:
@@ -56,6 +59,7 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:31:37.381531571Z"
+    priority: ~
   - id: 7
     status: Done
     changes:
@@ -68,6 +72,7 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T00:34:11.920449Z"
+    priority: ~
   - id: 8
     status: Done
     changes:
@@ -80,12 +85,14 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T15:57:58.001463844Z"
+    priority: ~
   - id: 9
     status: Todo
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T15:59:41.731718857Z"
+    priority: 0
   - id: 10
     status: Done
     changes:
@@ -95,6 +102,13 @@ tasks:
       - from: Todo
         to: Done
         "on": "2021-09-19T16:25:07.739663710Z"
+      - from: Done
+        to: Doing
+        "on": "2021-09-20T08:14:35.667033675Z"
+      - from: Doing
+        to: Done
+        "on": "2021-09-20T08:16:31.931306775Z"
+    priority: ~
   - id: 11
     status: Done
     changes:
@@ -104,12 +118,14 @@ tasks:
       - from: Todo
         to: Done
         "on": "2021-09-19T16:26:18.570567608Z"
+    priority: ~
   - id: 12
     status: Todo
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T16:26:52.366392032Z"
+    priority: 0
   - id: 13
     status: Done
     changes:
@@ -122,15 +138,28 @@ tasks:
       - from: Doing
         to: Done
         "on": "2021-09-19T18:59:47.610124712Z"
+    priority: ~
   - id: 14
     status: Todo
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T19:00:12.130720152Z"
+    priority: ~
   - id: 15
     status: Todo
     changes:
       - from: None
         to: Todo
         "on": "2021-09-19T19:01:16.482217256Z"
+    priority: ~
+  - id: 16
+    status: Doing
+    changes:
+      - from: None
+        to: Todo
+        "on": "2021-09-20T08:14:28.469840046Z"
+      - from: Todo
+        to: Doing
+        "on": "2021-09-20T08:16:33.585469161Z"
+    priority: ~
